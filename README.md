@@ -5,3 +5,7 @@
 - [ ] Controllare current sense circuit PCB
 - [ ] Recuperare sensori, cavi, connettori
 - [ ] **Distinguere sensori in corrente da quelli in tensione**
+
+## Prossimo meet
+**Martedì 6 Maggio**
+**10:00 AM**
