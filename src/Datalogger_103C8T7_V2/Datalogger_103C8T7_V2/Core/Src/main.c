@@ -26,6 +26,9 @@
 #include "pt1000.h"
 #include "stm32_adc_utils.h"
 #include <string.h>
+
+#include "functions.h"
+#include "constants.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -290,7 +293,7 @@ int main(void)
 	I2C_HandleTypeDef hi2c1;
 	TIM_HandleTypeDef htim1;
 	float oversamplingVoltages = { 0 };
-	bool tim_elapsed_flag = false;
+	bool tim_elapsed_flag = 0;
 
 	getADCChannelVoltage(&hi2c1, &htim1, 0, 0, &oversamplingVoltages, &tim_elapsed_flag);
 
@@ -301,76 +304,6 @@ int main(void)
   /* USER CODE END 3 */
 }
 
-
-uint8_t getADCChannelVoltage(I2C_HandleTypeDef* hi2c1, TIM_HandleTypeDef* htim1, uint8_t adcNumber, uint8_t dataChannel, float* dataValue, bool* timElapsedFlag){
-	// Retrieve the voltage of a target single ended channel
-	// I2C_ADC_OK -> 0x00
-	// I2C_ADC_TRANSMIT_ERROR -> 0x03
-	// I2C_ADC_WRONG_ADDRESS -> 0x02
-	// I2C_ADC_WRONG_NUMBER -> 0x01
-	// I2C_ADC_RECEIVE_ERROR -> 0x04
-	// I2C_ADC_REG_NUMBER_ERROR -> 0x05
-	// I2C_ADC_WRONG_DATA -> 0x06
-	// I2C_ADC_WRONG_SETUP -> 0x07
-	// I2C_ADC_ERRROR_START_SYNC_CMD -> 0x08
-	// I2C_ADC_ERROR_RDATA_CMD -> 0x09
-	// I2C_ADC_WRONG_CHANNEL -> 0x10
-
-	// Check ADC number
-	if (!((adcNumber == 1) || (adcNumber == 2))){
-		*dataValue = I2C_ADC_DATA_ERROR;
-		return I2C_ADC_WRONG_NUMBER;
-	}
-
-	// Check channel number
-	if ((dataChannel < 0) || (dataChannel > 3)){
-		*dataValue = I2C_ADC_DATA_ERROR;
-		return I2C_ADC_WRONG_CHANNEL;
-	}
-
-	uint8_t regChannel[4] = {REG_0_CH0, REG_0_CH1, REG_0_CH2, REG_0_CH3};
-
-	// Check setup is successful
-	uint8_t retValues[4] = {0xFF, 0xFF, 0xFF, 0xFF};
-	retValues[0] = ADCSetRegistersValue(hi2c1, adcNumber, 0x00, regChannel[dataChannel]);
-	retValues[1] = ADCSetRegistersValue(hi2c1, adcNumber, 0x01, REG_1_DEFAULT);
-	retValues[2] = ADCSetRegistersValue(hi2c1, adcNumber, 0x02, REG_2_DEFAULT);
-	retValues[3] = ADCSetRegistersValue(hi2c1, adcNumber, 0x03, REG_3_DEFAULT);
-
-	if ((retValues[0] == I2C_ADC_OK) && (retValues[1] == I2C_ADC_OK) && (retValues[2] == I2C_ADC_OK) && (retValues[3] == I2C_ADC_OK)){
-		if (ADCStartSyncCommand(hi2c1, adcNumber) == I2C_ADC_OK){
-			if (adcNumber == 1){
-				while (HAL_GPIO_ReadPin(ADC1_NDRDY_GPIO_Port, ADC1_NDRDY_Pin) != GPIO_PIN_RESET){
-					*timElapsedFlag = false;
-					HAL_TIM_Base_Start_IT(htim1);
-					while (timElapsedFlag == false){
-					}
-				}
-			} else if (adcNumber == 2){
-				while (HAL_GPIO_ReadPin(ADC2_NDRDY_GPIO_Port, ADC2_NDRDY_Pin) != GPIO_PIN_RESET){
-					*timElapsedFlag = false;
-					HAL_TIM_Base_Start_IT(htim1);
-					while (timElapsedFlag == false){
-					}
-				}
-			}
-			int32_t res = 0;
-			if (ADCGetDataValue(hi2c1, adcNumber, &res, I2C_ADC_DATA_VOLT) != I2C_ADC_OK){
-				*dataValue = I2C_ADC_DATA_ERROR;
-				return I2C_ADC_ERROR_RDATA_CMD;
-			} else {
-				*dataValue = getValueFromVoltageData(res);
-				return I2C_ADC_OK;
-			}
-		} else {
-			*dataValue = I2C_ADC_DATA_ERROR;
-			return I2C_ADC_ERROR_START_SYNC_CMD;
-		}
-	} else {
-		*dataValue = I2C_ADC_DATA_ERROR;
-		return I2C_ADC_WRONG_SETUP;
-	}
-}
 
 /**
   * @brief System Clock Configuration
