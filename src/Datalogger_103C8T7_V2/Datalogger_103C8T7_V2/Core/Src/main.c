@@ -117,7 +117,7 @@ uint8_t adsIndex = 0;
 uint32_t adsCounter = 0;
 
 float heightSensor1 = 0.0f, heightSensor2 = 0.0f;
-float tempBrakeSensor1 =0.0f, empBrakeSensor2 = 0.0f;
+float tempBrakeSensor1 =0.0f, tempBrakeSensor2 = 0.0f;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -130,6 +130,7 @@ static void MX_I2C1_Init(void);
 static void MX_TIM2_Init(void);
 static void MX_TIM3_Init(void);
 static void MX_TIM4_Init(void);
+float map(float x, float in_min, float in_max, float out_min, float out_max);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */

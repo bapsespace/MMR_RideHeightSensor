@@ -1,0 +1,14 @@
+../Core/Src/functions.c:12:9:getI2CAddress	3
+../Core/Src/functions.c:28:6:scanForI2CDevices	2
+../Core/Src/functions.c:40:6:areDevicesReady	3
+../Core/Src/functions.c:53:9:ADCSoftwareReset	7
+../Core/Src/functions.c:88:9:ADCStartSyncCommand	7
+../Core/Src/functions.c:123:9:ADCGetRegistersValue	11
+../Core/Src/functions.c:181:9:ADCSetRegistersValue	8
+../Core/Src/functions.c:229:9:ADCGetDataValue	13
+../Core/Src/functions.c:295:7:getValueFromVoltageData	2
+../Core/Src/functions.c:306:7:getValueFromTemperatureData	2
+../Core/Src/functions.c:315:7:getValueFromTestVoltageData	2
+../Core/Src/functions.c:328:9:linearInterpolation	8
+../Core/Src/functions.c:373:9:getADCChannelVoltage	16
+../Core/Src/functions.c:443:10:sortTemperatures	4
