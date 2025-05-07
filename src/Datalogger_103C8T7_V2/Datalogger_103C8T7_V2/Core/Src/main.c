@@ -118,6 +118,10 @@ uint32_t adsCounter = 0;
 
 float heightSensor1 = 0.0f, heightSensor2 = 0.0f;
 float tempBrakeSensor1 =0.0f, tempBrakeSensor2 = 0.0f;
+
+TIM_HandleTypeDef htim1;
+float oversamplingVoltages = { 0 };
+bool tim_elapsed_flag = 0;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -230,7 +234,7 @@ int main(void)
 
   if (HAL_I2C_Master_Transmit(&hi2c1, ADS_ADDRESS, adsConfigBuffer, 3, 100) != HAL_OK){
 	  error_I2C_test = 2;
-	  Error_Handler();
+	  //Error_Handler();
   }
 
   HAL_Delay(50);
@@ -248,7 +252,7 @@ int main(void)
 		//Get conversion data
 		if (HAL_I2C_Mem_Read(&hi2c1, ADS_ADDRESS, ADS_CONVERSION_REGISTER, 1, adsRetBuffer, 2, 10) != HAL_OK){
 			error_I2C_test = 3;
-			Error_Handler();
+			//Error_Handler();
 		}
 
 		//Decode converted data
@@ -270,7 +274,7 @@ int main(void)
 		//Send to ADC the configuration for next channel read
 		if (HAL_I2C_Master_Transmit(&hi2c1, ADS_ADDRESS, adsConfigBuffer, 3, 10) != HAL_OK){
 			error_I2C_test = 1;
-			Error_Handler();
+			//Error_Handler();
 		}
 
 		//Wait for conversion 860sps -> around 1ms minimum wait
@@ -291,12 +295,9 @@ int main(void)
 
 	/////////////////////// NEW ADC
 
-	I2C_HandleTypeDef hi2c1;
-	TIM_HandleTypeDef htim1;
-	float oversamplingVoltages = { 0 };
-	bool tim_elapsed_flag = 0;
 
-	getADCChannelVoltage(&hi2c1, &htim1, 0, 0, &oversamplingVoltages, &tim_elapsed_flag);
+
+	getADCChannelVoltage(&hi2c1, &htim1, 1, 1, &oversamplingVoltages, &tim_elapsed_flag);
 
 
 

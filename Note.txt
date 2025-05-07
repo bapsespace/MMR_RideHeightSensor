@@ -1,0 +1,6 @@
+PA15 --> 32  Pin reset I2C 
+
+
+2 Multiplexer che mandano all'ADC
+
+TMUX1309
