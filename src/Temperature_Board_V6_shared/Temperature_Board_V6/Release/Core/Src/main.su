@@ -1,0 +1,4 @@
+../Core/Src/functions.c:10:9:getI2CAddress	0	static
+../Core/Src/main.c:201:6:SystemClock_Config	104	static,ignoring_inline_asm
+../Core/Src/main.c:78:5:main	80	static,ignoring_inline_asm
+../Core/Src/main.c:534:6:Error_Handler	0	static,ignoring_inline_asm

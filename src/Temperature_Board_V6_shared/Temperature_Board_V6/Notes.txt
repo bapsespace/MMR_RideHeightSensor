@@ -1,0 +1,23 @@
+TIM1 -> APB2 (64MHZ)
+
+val_sec * (f_APB(HZ) / prescaler) = counter
+
+100uS -> 100*(10^-6)
+64Mhz -> 64*(10^6)
+
+#1 -> prescaler = 64
+
+Mux 0v 
+ADC 1 -> 1 3 6 8
+ADC 2 -> 9 11 14 16
+
+Mux 3.3V
+ADC 1 -> 2 4 5 7
+ADC 2 -> 10 12 13 15
+
+SEG3 -> Connettore 13-16, 1-4
+SEG2 -> Connettore 1-4, 5-8, 9-12
+SEG1 -> Connettore 1-4, 9-12
+
+
+CAN2 (TEMP) -> CAN 1 (BMS-ECU)

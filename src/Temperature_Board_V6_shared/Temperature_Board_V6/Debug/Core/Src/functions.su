@@ -1,0 +1,17 @@
+../Core/Src/functions.c:12:9:getI2CAddress	16	static
+../Core/Src/functions.c:28:6:scanForI2CDevices	32	static
+../Core/Src/functions.c:40:6:areDevicesReady	24	static
+../Core/Src/functions.c:53:9:ADCSoftwareReset	32	static
+../Core/Src/functions.c:88:9:ADCStartSyncCommand	32	static
+../Core/Src/functions.c:123:9:ADCGetRegistersValue	40	static
+../Core/Src/functions.c:181:9:ADCSetRegistersValue	32	static
+../Core/Src/functions.c:229:9:ADCGetDataValue	40	static
+../Core/Src/functions.c:294:6:setLEDColor	16	static
+../Core/Src/functions.c:333:7:getValueFromVoltageData	16	static
+../Core/Src/functions.c:344:7:getValueFromTemperatureData	16	static
+../Core/Src/functions.c:353:7:getValueFromTestVoltageData	16	static
+../Core/Src/functions.c:366:9:linearInterpolation	32	static
+../Core/Src/functions.c:411:9:getADCInternalTemperature	32	static
+../Core/Src/functions.c:463:9:getADCReferenceVoltage	32	static
+../Core/Src/functions.c:519:9:getADCChannelVoltage	40	static
+../Core/Src/functions.c:589:10:sortTemperatures	24	static
