@@ -17,7 +17,6 @@
         - pin S3A -> Right Height (Settare questi fissi per ora )
         - altri pin liberi AUX
 
-
 - [ ] Quando i multiplexer funzionano, programmare CAN MCP2562-E/SN
     - CAN RX TX, PA11, PA12
     - Solito modulo CAN riciclare codice da optocouple board
