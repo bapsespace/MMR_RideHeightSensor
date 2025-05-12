@@ -2,7 +2,7 @@
 
 ## Cose da fare 
 - [ ] Controllare codice "RideHeightSensor"
-    - Il codice in teoria è giusto ma da errore, controllare saldature schede, risandare adc e controllare continuità
+    - Il codice in teoria è giusto ma da errore, controllare saldature: adc e controllare continuità
 
 - [ ] Quando l'adc funziona in I2C, porgrammare Multiplexers TMUX1309
     - *Unused logic control pins must be tied to GND or VDD to ensure the device does not consume additional current as highlighted in Implications of Slow or Floating OS Inputs. Unused signal path inputs (Sx and Dx) should be connected to GND.*
