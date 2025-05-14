@@ -3,6 +3,7 @@
 ## Cose da fare 
 
 - [ ] **Fare merge codice ADC con codice MUX e testare**
+- [ ] **Caricare su github codice MUX**
 
 - [x] L'ADC funziona con il codice: "RideHeighSensorV3_ADC_OK"
 
