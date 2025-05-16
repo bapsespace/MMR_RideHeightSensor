@@ -1,12 +1,11 @@
 # MMR_RideHeightSensor
 
-## Cose da fare 
-
-- [ ] **IMPLEMENTARE CAN**
-- [ ] porta PT6 non funziona ma il mux si 
+## Note sul PCB
+- [ ] Problema di collegamento tra PT6 e pin S3B del MUX1, probabilemtne capacitor al posto di una resistenza
 - [ ] Da risaldare OPAMP e i 2 FUsibili per laser distance sensors
 
 ## Note sul Codice
+- [ ] **IMPLEMENTARE CAN**
 
 ## Note Varie
 
