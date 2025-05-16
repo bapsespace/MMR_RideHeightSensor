@@ -43,8 +43,6 @@ MUX2					PB10	PB11
 		[S2B --> ]		1	0	ok	-
 		[S3B --> ]		1	1	ok	-
 ```
-     
-- I pin di output vengono settati, da verificare se poi effettivamente il segnale arriva ai MUX e se funziona tutto 
 
 - [ ] Quando i multiplexer funzionano, programmare CAN MCP2562-E/SN
     - CAN RX TX, PA11, PA12
