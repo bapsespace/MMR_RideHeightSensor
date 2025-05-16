@@ -7,6 +7,7 @@
 ## Note sul Codice
 - [ ] **IMPLEMENTARE CAN**
 - [ ] aggiungere funzione conversione, adc_raw -> adce_voltage  (-32k : +32K [signed int 16bit]  -> -2.048V : +2.048V [float])
+- [ ] Aggiungere, funzione calibrazione specifica **solo** per Sensori Laser Distanza
 
 ## Note Varie
 
