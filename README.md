@@ -14,7 +14,7 @@
 - [x] Quando l'adc funziona in I2C, porgrammare Multiplexers TMUX1309
     - *Unused logic control pins must be tied to GND or VDD to ensure the device does not consume additional current as highlighted in Implications of Slow or Floating OS Inputs. Unused signal path inputs (Sx and Dx) should be connected to GND.*
     ![Table](/MUX%20Control%20Table.png)
-
+'''
     MUX1					PB4	PB5
 	(DA --> AIN0)			A1	A0
 		[S0A --> ADC1]		0	0	ok	FUNZIONA
@@ -44,7 +44,7 @@ MUX2					PB10	PB11
 
 
 
-
+'''
      
     - I pin di output vengono settati, da verificare se poi effettivamente il segnale arriva ai MUX e se funziona tutto 
 
