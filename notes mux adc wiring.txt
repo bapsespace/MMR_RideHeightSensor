@@ -1,29 +1,29 @@
 MUX1					PB4	PB5
 	(DA --> AIN0)			A1	A0
-		[S0A --> ADC2]		0	0
-		[S1A --> ]		0	1
-		[S2A --> PT1]		1	0
-		[S3A --> ADC1]		1	1
+		[S0A --> ADC1]		0	0	ok	FUNZIONA
+		[S1A --> ]		0	1	ok	-
+		[S2A --> PT1]		1	0	ok	FUNZIONA
+		[S3A --> ADC2]		1	1	ok	FUNZIONA
 
 	(DB --> AIN1)	
-		[S0B --> PT2]		0	0
-		[S1B --> PT8]		0	1
-		[S2B --> PT4]		1	0
-		[S3B --> PT6]		1	1
+		[S0B --> PT2]		0	0	ok	FUNZIONA
+		[S1B --> PT8]		0	1	ok	FUNZIONA
+		[S2B --> PT4]		1	0	ok	FUNZIONA
+		[S3B --> PT6]		1	1	ok	-DA CONTROLLARE (mux1 funziona è problema tra PT6 e MUX1)
 
 
 MUX2					PB10	PB11
 	(DA --> AIN2)			A1	A0
-		[S0A --> PT3]		0	0
-		[S1A --> PT5]		0	1
-		[S2A --> PT7]		1	0
-		[S3A --> Height_Right]	1	1
+		[S0A --> PT3]		0	0	ok	FUNZIONA
+		[S1A --> PT5]		0	1	ok	FUNZIONA
+		[S2A --> PT7]		1	0	ok	FUNZIONA
+		[S3A --> Height_Right]	1	1	ok	FUNZIONA
 
 	(DB --> AIN3)			
-		[S0B --> ]		0	0
-		[S1B --> Height_Left]	0	1
-		[S2B --> ]		1	0
-		[S3B --> ]		1	1
+		[S0B --> ]		0	0	ok	-
+		[S1B --> Height_Left]	0	1	ok	FUNZIONA
+		[S2B --> ]		1	0	ok	-
+		[S3B --> ]		1	1	ok	-
 
 
 

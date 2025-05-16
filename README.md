@@ -2,8 +2,9 @@
 
 ## Cose da fare 
 
-- [ ] **Fare merge codice ADC con codice MUX e testare**
-- [ ] **Caricare su github codice MUX**
+- [ ] **IMPLEMENTARE CAN**
+- [ ] porta PT6 non funziona ma il mux si 
+- [ ] Da risaldare OPAMP e i 2 FUsibili per laser distance sensors
 
 - [x] L'ADC funziona con il codice: "RideHeighSensorV3_ADC_OK"
 
