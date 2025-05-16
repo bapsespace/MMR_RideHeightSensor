@@ -6,6 +6,10 @@
 - [ ] porta PT6 non funziona ma il mux si 
 - [ ] Da risaldare OPAMP e i 2 FUsibili per laser distance sensors
 
+## Note sul Codice
+
+## Note Varie
+
 - [x] L'ADC funziona con il codice: "RideHeighSensorV3_ADC_OK"
 
 - [x] Quando l'adc funziona in I2C, porgrammare Multiplexers TMUX1309
