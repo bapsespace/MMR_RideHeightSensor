@@ -16,7 +16,7 @@
     ![Table](/MUX%20Control%20Table.png)
 
 ```
-    MUX1					PB4	PB5
+    MUX1				PB4	PB5
 	(DA --> AIN0)			A1	A0
 		[S0A --> ADC1]		0	0	ok	FUNZIONA
 		[S1A --> ]		0	1	ok	-
@@ -42,12 +42,9 @@ MUX2					PB10	PB11
 		[S1B --> Height_Left]	0	1	ok	FUNZIONA
 		[S2B --> ]		1	0	ok	-
 		[S3B --> ]		1	1	ok	-
-
-
-
 ```
      
-    - I pin di output vengono settati, da verificare se poi effettivamente il segnale arriva ai MUX e se funziona tutto 
+- I pin di output vengono settati, da verificare se poi effettivamente il segnale arriva ai MUX e se funziona tutto 
 
 - [ ] Quando i multiplexer funzionano, programmare CAN MCP2562-E/SN
     - CAN RX TX, PA11, PA12
