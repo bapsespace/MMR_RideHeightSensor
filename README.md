@@ -30,7 +30,7 @@
 		[S3B --> PT6]		1	1	ok	-DA CONTROLLARE
 
 
-MUX2					PB10	PB11
+    MUX2				PB10	PB11
 	(DA --> AIN2)			A1	A0
 		[S0A --> PT3]		0	0	ok	FUNZIONA
 		[S1A --> PT5]		0	1	ok	FUNZIONA
