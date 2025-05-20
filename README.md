@@ -48,7 +48,7 @@
 		[S3B --> ]		1	1	ok	-
 ```
 
-- [ ] Quando i multiplexer funzionano, programmare CAN MCP2562-E/SN
+- [x] Quando i multiplexer funzionano, programmare CAN MCP2562-E/SN
     - CAN RX TX, PA11, PA12
     - Solito modulo CAN riciclare codice da optocouple board
 
