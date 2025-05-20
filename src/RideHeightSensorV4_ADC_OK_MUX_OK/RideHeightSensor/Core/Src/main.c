@@ -40,9 +40,17 @@
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
+CAN_HandleTypeDef hcan;
+
 I2C_HandleTypeDef hi2c1;
 
 /* USER CODE BEGIN PV */
+
+CAN_TxHeaderTypeDef TxHeader;
+CAN_RxHeaderTypeDef RxHeader;
+uint8_t TxData[8] = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08};
+uint8_t RxData[8];
+uint32_t TxMailbox = 0;
 
 // adc raw value from pin AIN0 AIN1 AIN2 AIN3
 int16_t adc_raw[4] = {0,0,0,0};
@@ -73,6 +81,7 @@ uint8_t config_data[2] = {0x01, 0b00000100};  // Register address + config byte
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_I2C1_Init(void);
+static void MX_CAN_Init(void);
 /* USER CODE BEGIN PFP */
 void ADS1119_Reset(I2C_HandleTypeDef *hi2c);
 void ADS1119_Start(I2C_HandleTypeDef *hi2c);
@@ -80,6 +89,14 @@ int16_t ADS1119_Read(I2C_HandleTypeDef *hi2c, int port_number);
 
 
 void Analog_Read_ALL();
+
+
+void SystemClock_Config(void);
+static void MX_GPIO_Init(void);
+static void MX_CAN_Init(void);
+
+void CAN_Config(void);
+
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -113,7 +130,18 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_I2C1_Init();
+  MX_CAN_Init();
   /* USER CODE BEGIN 2 */
+
+  // Initialize the header fields
+  TxHeader.StdId = 0x123;          // Standard ID
+  TxHeader.ExtId = 0x00;           // Not using extended ID
+  TxHeader.RTR = CAN_RTR_DATA;     // Data frame (not remote)
+  TxHeader.IDE = CAN_ID_STD;       // Standard ID
+  TxHeader.DLC = 8;                // Send 8 bytes
+  TxHeader.TransmitGlobalTime = DISABLE;
+
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -122,10 +150,20 @@ int main(void)
   ADS1119_Reset(&hi2c1);
   ADS1119_Start(&hi2c1);
 
+  HAL_Delay(10);
+
+  //HAL_CAN_Stop(&hcan);
+  HAL_CAN_Start(&hcan);
+
 
   while (1) {
 
 	  Analog_Read_ALL();
+
+	    if(HAL_CAN_AddTxMessage(&hcan, &TxHeader, TxData, &TxMailbox)!= HAL_OK)
+	    {
+	      Error_Handler();
+	    }
 
   }
 
@@ -148,12 +186,13 @@ void SystemClock_Config(void)
   /** Initializes the RCC Oscillators according to the specified parameters
   * in the RCC_OscInitTypeDef structure.
   */
-  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI;
+  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE;
+  RCC_OscInitStruct.HSEState = RCC_HSE_ON;
+  RCC_OscInitStruct.HSEPredivValue = RCC_HSE_PREDIV_DIV2;
   RCC_OscInitStruct.HSIState = RCC_HSI_ON;
-  RCC_OscInitStruct.HSICalibrationValue = RCC_HSICALIBRATION_DEFAULT;
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
-  RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSI_DIV2;
-  RCC_OscInitStruct.PLL.PLLMUL = RCC_PLL_MUL16;
+  RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
+  RCC_OscInitStruct.PLL.PLLMUL = RCC_PLL_MUL9;
   if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
   {
     Error_Handler();
@@ -172,6 +211,43 @@ void SystemClock_Config(void)
   {
     Error_Handler();
   }
+}
+
+/**
+  * @brief CAN Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_CAN_Init(void)
+{
+
+  /* USER CODE BEGIN CAN_Init 0 */
+
+  /* USER CODE END CAN_Init 0 */
+
+  /* USER CODE BEGIN CAN_Init 1 */
+
+  /* USER CODE END CAN_Init 1 */
+  hcan.Instance = CAN1;
+  hcan.Init.Prescaler = 3;
+  hcan.Init.Mode = CAN_MODE_LOOPBACK;
+  hcan.Init.SyncJumpWidth = CAN_SJW_1TQ;
+  hcan.Init.TimeSeg1 = CAN_BS1_10TQ;
+  hcan.Init.TimeSeg2 = CAN_BS2_1TQ;
+  hcan.Init.TimeTriggeredMode = DISABLE;
+  hcan.Init.AutoBusOff = DISABLE;
+  hcan.Init.AutoWakeUp = DISABLE;
+  hcan.Init.AutoRetransmission = DISABLE;
+  hcan.Init.ReceiveFifoLocked = DISABLE;
+  hcan.Init.TransmitFifoPriority = DISABLE;
+  if (HAL_CAN_Init(&hcan) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN CAN_Init 2 */
+
+  /* USER CODE END CAN_Init 2 */
+
 }
 
 /**
@@ -227,6 +303,7 @@ static void MX_GPIO_Init(void)
 /* USER CODE END MX_GPIO_Init_1 */
 
   /* GPIO Ports Clock Enable */
+  __HAL_RCC_GPIOD_CLK_ENABLE();
   __HAL_RCC_GPIOB_CLK_ENABLE();
   __HAL_RCC_GPIOA_CLK_ENABLE();
 
@@ -359,6 +436,19 @@ void Analog_Read_ALL(){
     height_left_analog_in_raw = ADS1119_Read(&hi2c1,2);//Height Left
     ADS1119_Read(&hi2c1,3);							// Not connected
 
+}
+
+
+
+void CAN_Config(void)
+{
+  // Configure CAN transmission header
+  TxHeader.StdId = 0x123;          // Standard identifier
+  TxHeader.ExtId = 0x00;           // Extended identifier (not used)
+  TxHeader.RTR = CAN_RTR_DATA;     // Data frame (not remote)
+  TxHeader.IDE = CAN_ID_STD;       // Standard ID
+  TxHeader.DLC = 8;                // Data length (8 bytes)
+  TxHeader.TransmitGlobalTime = DISABLE;
 }
 
 
