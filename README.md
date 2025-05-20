@@ -1,7 +1,7 @@
 # MMR_RideHeightSensor
 
 ## Note sul PCB
-- [ ] Problema di collegamento tra PT6 e pin S3B del MUX1, probabilemtne capacitor al posto di una resistenza
+- [x] PT6 NON COLLEGATO, errore design PCB, (_non è indispinsabile basta ricordarsi di non usarlo_)
 - [ ] Da risaldare OPAMP e i 2 FUsibili per laser distance sensors
 
 ## Note sul Codice
