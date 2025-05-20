@@ -31,7 +31,7 @@
 		[S0B --> PT2]		0	0	ok	FUNZIONA
 		[S1B --> PT8]		0	1	ok	FUNZIONA
 		[S2B --> PT4]		1	0	ok	FUNZIONA
-		[S3B --> PT6]		1	1	ok	-DA CONTROLLARE
+		[S3B --> PT6]		1	1	ok	- ERRORE NEL PCB, NON COLLEGATO 
 
 
     MUX2				PB10	PB11
