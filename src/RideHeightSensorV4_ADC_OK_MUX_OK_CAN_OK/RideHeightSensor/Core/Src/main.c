@@ -53,27 +53,58 @@ uint8_t RxData[8];
 uint32_t TxMailbox = 0;
 
 // PCB analog pin raw value from multiplexer integration with adc
-int16_t pt_analog_in_raw[8] = {0,0,0,0,0,0,0,0};
-int16_t adc_analog_in_raw[2] = {0,0};
+int16_t pt_analog_in_raw[8] = {0};
+int16_t adc_analog_in_raw[2] = {0};
 int16_t height_right_analog_in_raw = 0;
 int16_t height_left_analog_in_raw = 0;
 
 // Converted millivolt values
-int32_t pt_analog_in_mv[8] = {0,0,0,0,0,0,0,0};
-int32_t adc_analog_in_mv[2] = {0,0};
+int32_t pt_analog_in_mv[8] = {0};
+int32_t adc_analog_in_mv[2] = {0};
 int32_t height_right_analog_in_mv = 0;
 int32_t height_left_analog_in_mv = 0;
-
-// Calibration parameters (adjust these for your specific sensors)
-float height_sensor_gain = 1.0f;    // mm/mV
-float height_sensor_offset = 0.0f;  // mm
 
 // Calibrated distance outputs (in mm)
 float distance_right_mm = 0.0f;
 float distance_left_mm = 0.0f;
 
+float pt_analog_in_temp[8] = {0.0f};
+
+
+
 // CONFIG byte for differential AIN0-AIN1, Gain = 1, 20 SPS, continuous mode
 uint8_t config_data[2] = {0x01, 0b00000100};  // Register address + config byte
+
+
+
+//LOOKUP TABLES
+// Structure for a lookup table
+typedef struct {
+    const int32_t *input_values;  // Array of input values (mV)
+    const float *output_values;   // Array of output values (mm or °C)
+    uint8_t size;                 // Number of entries in the table
+} LookupTable_t;
+
+
+
+// Example table for height sensor (4-point calibration)
+static const int32_t height_input_mv[] = {0, 1000, 2000, 3000};
+static const float height_output_mm[] = {0.0f, 10.0f, 20.0f, 30.0f};
+LookupTable_t height_table = {
+    .input_values = height_input_mv,
+    .output_values = height_output_mm,
+    .size = 4
+};
+
+
+// Example table for temperature sensor
+static const int32_t temp_input_mv[] = {0, 1000, 2000, 3000};
+static const float temp_output_c[] = {-10.0f, 25.0f, 60.0f, 100.0f};
+LookupTable_t temp_table = {
+    .input_values = temp_input_mv,
+    .output_values = temp_output_c,
+    .size = 4
+};
 
 /* USER CODE END PV */
 
@@ -88,11 +119,14 @@ void ADS1119_Start(I2C_HandleTypeDef *hi2c);
 int16_t ADS1119_Read(I2C_HandleTypeDef *hi2c, int port_number);
 int32_t ADS1119_ConvertToMillivolts(int16_t raw_value);
 
-void ConvertHeightToDistance(void);
+void ConvertMilliVoltsToDistance(void);
+void ConvertMilliVoltsToTemperature(void);
 
 void ConvertAllAdcToMillivolts(void);
 
 void Analog_Read_ALL(void);
+
+float LookupWithInterpolation(const LookupTable_t *table, int32_t input);
 
 
 void SystemClock_Config(void);
@@ -166,7 +200,9 @@ int main(void)
 
 	  ConvertAllAdcToMillivolts();
 
-	  ConvertHeightToDistance();
+	  ConvertMilliVoltsToDistance();
+
+	  ConvertMilliVoltsToTemperature();
 
 	    if(HAL_CAN_AddTxMessage(&hcan, &TxHeader, TxData, &TxMailbox)!= HAL_OK)
 	    {
@@ -483,10 +519,44 @@ int32_t ADS1119_ConvertToMillivolts(int16_t raw_value) {
     // Or even simpler: return raw_value / 16;
 }
 
-void ConvertHeightToDistance(void) {
-    distance_right_mm = (height_right_analog_in_mv * height_sensor_gain) + height_sensor_offset;
-    distance_left_mm = (height_left_analog_in_mv * height_sensor_gain) + height_sensor_offset;
+void ConvertMilliVoltsToDistance(void) {
+    distance_right_mm = LookupWithInterpolation(&height_table, height_right_analog_in_mv);
+    distance_left_mm = LookupWithInterpolation(&height_table, height_left_analog_in_mv);
 }
+
+void ConvertMilliVoltsToTemperature(void){
+    for(int i = 0; i < 8; i++) {
+        pt_analog_in_temp[i] = LookupWithInterpolation(&temp_table, pt_analog_in_mv[i]);
+    }
+}
+
+
+float LookupWithInterpolation(const LookupTable_t *table, int32_t input) {
+    // Check for input below table range
+    if(input <= table->input_values[0]) {
+        return table->output_values[0];
+    }
+
+    // Check for input above table range
+    if(input >= table->input_values[table->size-1]) {
+        return table->output_values[table->size-1];
+    }
+
+    // Find the interval where input lies
+    uint8_t i;
+    for(i = 0; i < table->size-1; i++) {
+        if(input < table->input_values[i+1]) {
+            break;
+        }
+    }
+
+    // Linear interpolation
+    float slope = (table->output_values[i+1] - table->output_values[i]) /
+                  (float)(table->input_values[i+1] - table->input_values[i]);
+
+    return table->output_values[i] + slope * (input - table->input_values[i]);
+}
+
 
 
 /* USER CODE END 4 */
