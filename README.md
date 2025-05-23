@@ -1,13 +1,14 @@
 # MMR_RideHeightSensor
-
+- [ ] CAN analyzer, non funziona da vedere impostazioni, l'unico che è riuscito a leggere (can adapater di con programma linux di ale informatica)
 ## Note sul PCB
 - [x] PT6 NON COLLEGATO, errore design PCB, (_non è indispinsabile basta ricordarsi di non usarlo_)
 - [x] Da risaldare OPAMP e i 2 FUsibili per laser distance sensors
 - [ ] Testare Laser sensor (check voltage divider / current mesuring circuit )
+- [ ] In fase di TEST ricordarsi di attaccare resistenza 120Ohm sul CANBUS
 
 ## Note sul Codice
 - [ ] CAN, test message funziona, implementare invio dati ADC
-- [ ] aggiungere funzione conversione, adc_raw -> adce_voltage  (-32k : +32K [signed int 16bit]  -> -2.048V : +2.048V [float])
+- [x] aggiungere funzione conversione, adc_raw -> adce_voltage  (-32k : +32K [signed int 16bit]  -> -2.048V : +2.048V [float])
 - [ ] Ride Height, Aggiungere funzione calibrazione specifica **solo** per Sensori Laser Distanza
 - [ ] PT, aggiungere funzione calibrazione specifica di conversione **solo** per PT pin
 
