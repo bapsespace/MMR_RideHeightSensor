@@ -13,12 +13,12 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
+//ADC
 #define ADS1119_ADDR     (0x40 << 1)  // 7-bit address + R/W bit
 #define ADS1119_REG_CONFIG   0x40
 #define ADS1119_CMD_START    0x08
 #define ADS1119_CMD_READ     0x10
 #define ADS1119_CMD_RESET    0x06
-
 
 //Testato funziona NON MODIFICARE
 #define CONFIG_AIN0   0b01100000 // AIN0 - AGND
@@ -33,6 +33,8 @@
 #define MUX2_A0_B GPIO_PIN_11
 #define MUX2_A1_B GPIO_PIN_10
 
+#define CAN_ID_RDHT_ADC 0x123 // ID messaggio ride height (2byte l'uno): left + rigt + adc1 + adc2
+
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -44,15 +46,23 @@ CAN_HandleTypeDef hcan;
 
 I2C_HandleTypeDef hi2c1;
 
+TIM_HandleTypeDef htim1;
+
 /* USER CODE BEGIN PV */
 
+// Global variables for timing flags
+volatile uint8_t flag_1ms = 0;
+volatile uint8_t flag_10ms = 0;
+volatile uint8_t flag_100ms = 0;
+volatile uint8_t flag_1000ms = 0;
+
+
+// CAN
 CAN_TxHeaderTypeDef TxHeader;
-CAN_RxHeaderTypeDef RxHeader;
 uint8_t TxData[8] = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08};
-uint8_t RxData[8];
 uint32_t TxMailbox = 0;
 
-// PCB analog pin raw value from multiplexer integration with adc
+// ADC
 int16_t pt_analog_in_raw[8] = {0};
 int16_t adc_analog_in_raw[2] = {0};
 int16_t height_right_analog_in_raw = 0;
@@ -87,7 +97,7 @@ typedef struct {
 
 
 
-// Example table for height sensor (4-point calibration)
+// Table for height sensor
 static const int32_t height_input_mv[] = {0, 1000, 2000, 3000};
 static const float height_output_mm[] = {0.0f, 10.0f, 20.0f, 30.0f};
 LookupTable_t height_table = {
@@ -97,7 +107,7 @@ LookupTable_t height_table = {
 };
 
 
-// Example table for temperature sensor
+// Table for temperature sensor
 static const int32_t temp_input_mv[] = {0, 1000, 2000, 3000};
 static const float temp_output_c[] = {-10.0f, 25.0f, 60.0f, 100.0f};
 LookupTable_t temp_table = {
@@ -113,6 +123,7 @@ void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_I2C1_Init(void);
 static void MX_CAN_Init(void);
+static void MX_TIM1_Init(void);
 /* USER CODE BEGIN PFP */
 void ADS1119_Reset(I2C_HandleTypeDef *hi2c);
 void ADS1119_Start(I2C_HandleTypeDef *hi2c);
@@ -134,6 +145,8 @@ static void MX_GPIO_Init(void);
 static void MX_CAN_Init(void);
 
 void CAN_Config(void);
+
+void SendAllToCan(void);
 
 /* USER CODE END PFP */
 
@@ -169,16 +182,8 @@ int main(void)
   MX_GPIO_Init();
   MX_I2C1_Init();
   MX_CAN_Init();
+  MX_TIM1_Init();
   /* USER CODE BEGIN 2 */
-
-  // Initialize the header fields
-  TxHeader.StdId = 0x123;          // Standard ID
-  TxHeader.ExtId = 0x00;           // Not using extended ID
-  TxHeader.RTR = CAN_RTR_DATA;     // Data frame (not remote)
-  TxHeader.IDE = CAN_ID_STD;       // Standard ID
-  TxHeader.DLC = 8;                // Send 8 bytes
-  TxHeader.TransmitGlobalTime = DISABLE;
-
 
   /* USER CODE END 2 */
 
@@ -196,18 +201,28 @@ int main(void)
 
   while (1) {
 
-	  Analog_Read_ALL();
+	  if (flag_1ms) {
+	    flag_1ms = 0;
+	    // 1ms tasks here
+	  }
 
-	  ConvertAllAdcToMillivolts();
+	  if (flag_10ms) {
+	    flag_10ms = 0;
+	    Analog_Read_ALL();
+	    ConvertAllAdcToMillivolts();
+	    ConvertMilliVoltsToDistance();
+	    ConvertMilliVoltsToTemperature();
+	  }
 
-	  ConvertMilliVoltsToDistance();
+	  if (flag_100ms) {
+	    flag_100ms = 0;
 
-	  ConvertMilliVoltsToTemperature();
+	  }
 
-	    if(HAL_CAN_AddTxMessage(&hcan, &TxHeader, TxData, &TxMailbox)!= HAL_OK)
-	    {
-	      Error_Handler();
-	    }
+	  if (flag_1000ms) {
+	    flag_1000ms = 0;
+	    SendAllToCan();
+	  }
 
   }
 
@@ -332,6 +347,52 @@ static void MX_I2C1_Init(void)
   }
   /* USER CODE BEGIN I2C1_Init 2 */
   /* USER CODE END I2C1_Init 2 */
+
+}
+
+/**
+  * @brief TIM1 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_TIM1_Init(void)
+{
+
+  /* USER CODE BEGIN TIM1_Init 0 */
+
+  /* USER CODE END TIM1_Init 0 */
+
+  TIM_ClockConfigTypeDef sClockSourceConfig = {0};
+  TIM_MasterConfigTypeDef sMasterConfig = {0};
+
+  /* USER CODE BEGIN TIM1_Init 1 */
+
+  /* USER CODE END TIM1_Init 1 */
+  htim1.Instance = TIM1;
+  htim1.Init.Prescaler = 71;
+  htim1.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim1.Init.Period = 999;
+  htim1.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+  htim1.Init.RepetitionCounter = 0;
+  htim1.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
+  if (HAL_TIM_Base_Init(&htim1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
+  if (HAL_TIM_ConfigClockSource(&htim1, &sClockSourceConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+  if (HAL_TIMEx_MasterConfigSynchronization(&htim1, &sMasterConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN TIM1_Init 2 */
+
+  /* USER CODE END TIM1_Init 2 */
 
 }
 
@@ -499,18 +560,6 @@ void ConvertAllAdcToMillivolts(void) {
 }
 
 
-void CAN_Config(void)
-{
-  // Configure CAN transmission header
-  TxHeader.StdId = 0x123;          // Standard identifier
-  TxHeader.ExtId = 0x00;           // Extended identifier (not used)
-  TxHeader.RTR = CAN_RTR_DATA;     // Data frame (not remote)
-  TxHeader.IDE = CAN_ID_STD;       // Standard ID
-  TxHeader.DLC = 8;                // Data length (8 bytes)
-  TxHeader.TransmitGlobalTime = DISABLE;
-}
-
-
 int32_t ADS1119_ConvertToMillivolts(int16_t raw_value) {
     // 2.048V = 2048mV, 32768 = 2^15
     // Calculation: (raw_value * 2048) / 32768
@@ -555,6 +604,23 @@ float LookupWithInterpolation(const LookupTable_t *table, int32_t input) {
                   (float)(table->input_values[i+1] - table->input_values[i]);
 
     return table->output_values[i] + slope * (input - table->input_values[i]);
+}
+
+void SendAllToCan(void){
+
+	  // Initialize the header fields
+	  TxHeader.StdId = CAN_ID_RDHT_ADC;          // Standard ID
+	  TxHeader.ExtId = 0x00;           // Not using extended ID
+	  TxHeader.RTR = CAN_RTR_DATA;     // Data frame (not remote)
+	  TxHeader.IDE = CAN_ID_STD;       // Standard ID
+	  TxHeader.DLC = 8;                // Send 8 bytes
+	  TxHeader.TransmitGlobalTime = DISABLE;
+
+
+      if(HAL_CAN_AddTxMessage(&hcan, &TxHeader, TxData, &TxMailbox)!= HAL_OK)
+      {
+       Error_Handler();
+      }
 }
 
 
