@@ -53,8 +53,8 @@
     - CAN RX TX, PA11, PA12
     - Solito modulo CAN riciclare codice da optocouple board
 
-- [ ] Quando tutti i sensori funzionano si può collegare i sensori di distanza , e cominciare a definire la funzione di calibrazione della misura
+- [x] Quando tutti i sensori funzionano si può collegare i sensori di distanza , e cominciare a definire la funzione di calibrazione della misura
     - Arduino MAP function
 
-- [ ] High level coding, main Code 
+- [x] High level coding, main Code 
     - Loop tra i vari canali dei MUX Salva dato e manda in can
