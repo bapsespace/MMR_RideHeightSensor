@@ -1,14 +1,16 @@
 # MMR_RideHeightSensor
-- [ ] CAN analyzer, non funziona da vedere impostazioni, l'unico che è riuscito a leggere (can adapater di con programma linux di ale informatica)
+- [ ] **SALADARE seconda scheda**
+- [ ] **CONTROLLARE SCHEMATICO CIRCUITO ride height sensor, (NON può funzionare ?)**
 - [ ] **CALIBRARE SENSORI ALTEZZA E TEMPERATURE, nelle look up table**
 ## Note sul PCB
+- [ ] Testare Laser sensor (check voltage divider / current mesuring circuit )
 - [x] PT6 NON COLLEGATO, errore design PCB, (_non è indispinsabile basta ricordarsi di non usarlo_)
 - [x] Da risaldare OPAMP e i 2 FUsibili per laser distance sensors
-- [ ] Testare Laser sensor (check voltage divider / current mesuring circuit )
-- [ ] In fase di TEST ricordarsi di attaccare resistenza 120Ohm sul CANBUS
+- [x] In fase di TEST ricordarsi di attaccare resistenza 120Ohm sul CANBUS
 
 ## Note sul Codice
-- [ ] CAN, test message funziona, implementare invio dati ADC
+- [ ] Forse si può ottimizzare ancora il codice Analog_Read_ALL(), Settare prima il mux e poi adc sweep, ma è da verificare se effettivamente è più voloce o no 
+- [x] CAN, test message funziona, implementare invio dati ADC
 - [x] aggiungere funzione conversione, adc_raw -> adce_voltage  (-32k : +32K [signed int 16bit]  -> -2.048V : +2.048V [float])
 - [x] Ride Height, Aggiungere funzione calibrazione specifica **solo** per Sensori Laser Distanza
 - [x] PT, aggiungere funzione calibrazione specifica di conversione **solo** per PT pin
@@ -54,8 +56,8 @@
     - CAN RX TX, PA11, PA12
     - Solito modulo CAN riciclare codice da optocouple board
 
-- [ ] Quando tutti i sensori funzionano si può collegare i sensori di distanza , e cominciare a definire la funzione di calibrazione della misura
+- [x] Quando tutti i sensori funzionano si può collegare i sensori di distanza , e cominciare a definire la funzione di calibrazione della misura
     - Arduino MAP function
 
-- [ ] High level coding, main Code 
+- [x] High level coding, main Code 
     - Loop tra i vari canali dei MUX Salva dato e manda in can
