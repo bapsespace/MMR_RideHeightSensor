@@ -5,6 +5,8 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "core_cm3.h"  // for __NOP
+#include "stm32f1xx_hal.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -21,10 +23,10 @@
 #define ADS1119_CMD_RESET    0x06
 
 //Testato funziona NON MODIFICARE
-#define CONFIG_AIN0   0b01100000 // AIN0 - AGND
-#define CONFIG_AIN1   0b10000000 //	AIN1 - AGND
-#define CONFIG_AIN2   0b10100000 //	AIN2 - AGND
-#define CONFIG_AIN3   0b11000000 // AIN3 - AGND
+#define CONFIG_AIN0   0b01101110 // AIN0 - AGND
+#define CONFIG_AIN1   0b10001110 //	AIN1 - AGND
+#define CONFIG_AIN2   0b10101110 //	AIN2 - AGND
+#define CONFIG_AIN3   0b11001110 // AIN3 - AGND
 
 
 #define MUX1_A0_B GPIO_PIN_5
@@ -33,7 +35,7 @@
 #define MUX2_A0_B GPIO_PIN_11
 #define MUX2_A1_B GPIO_PIN_10
 
-#define CAN_ID_RDHT_ADC 0x123 // ID messaggio ride height (2byte l'uno): left + rigt + adc1 + adc2
+#define CAN_ID_RDHT_ADC 0x315 // ID messaggio ride height (2byte l'uno): left + rigt + adc1 + adc2
 
 /* USER CODE END PD */
 
@@ -56,11 +58,27 @@ volatile uint8_t flag_10ms = 0;
 volatile uint8_t flag_100ms = 0;
 volatile uint8_t flag_1000ms = 0;
 
+// Counter variables
+volatile uint16_t ms_counter = 0;
+
+// Globals for debug timing
+volatile uint32_t exec_time_1ms = 0; // should not exceed 50_000
+volatile uint32_t exec_time_10ms = 0; // should not exceed 500_000
+volatile uint32_t exec_time_100ms = 0; // should not exceed 5_000_000
+volatile uint32_t exec_time_1000ms = 0; // should not exceed 50_000_000
+
+// Helper macro to compute time difference with wraparound
+#define SYSTICK_DIFF(start, end) ((start >= end) ? (start - end) : (SysTick->LOAD - end + start))
+
+
+
+
 
 // CAN
-CAN_TxHeaderTypeDef TxHeader;
-uint8_t TxData[8] = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08};
-uint32_t TxMailbox = 0;
+CAN_TxHeaderTypeDef can_main_data_TxHeader;
+uint32_t can_TxMailbox = 0;
+uint8_t can_main_data[8] = {0x00};
+
 
 // ADC
 int16_t pt_analog_in_raw[8] = {0};
@@ -99,7 +117,7 @@ typedef struct {
 
 // Table for height sensor
 static const int32_t height_input_mv[] = {0, 1000, 2000, 3000};
-static const float height_output_mm[] = {0.0f, 10.0f, 20.0f, 30.0f};
+static const float height_output_mm[] = {0.0f, 10.0f, 20.0f, 120.0f};
 LookupTable_t height_table = {
     .input_values = height_input_mv,
     .output_values = height_output_mm,
@@ -127,8 +145,11 @@ static void MX_TIM1_Init(void);
 /* USER CODE BEGIN PFP */
 void ADS1119_Reset(I2C_HandleTypeDef *hi2c);
 void ADS1119_Start(I2C_HandleTypeDef *hi2c);
-int16_t ADS1119_Read(I2C_HandleTypeDef *hi2c, int port_number);
+void ADS1119_Config(I2C_HandleTypeDef *hi2c, int port_number);
+int16_t ADS1119_Read(I2C_HandleTypeDef *hi2c);
 int32_t ADS1119_ConvertToMillivolts(int16_t raw_value);
+
+void SetMUX(uint8_t mux_value);
 
 void ConvertMilliVoltsToDistance(void);
 void ConvertMilliVoltsToTemperature(void);
@@ -146,7 +167,7 @@ static void MX_CAN_Init(void);
 
 void CAN_Config(void);
 
-void SendAllToCan(void);
+void SendMainDataToCan(void);
 
 /* USER CODE END PFP */
 
@@ -198,33 +219,57 @@ int main(void)
   //HAL_CAN_Stop(&hcan);
   HAL_CAN_Start(&hcan);
 
+  // Start TIM1 in interrupt mode
+  HAL_TIM_Base_Start_IT(&htim1);
+
 
   while (1) {
+      uint32_t start, end;
 
-	  if (flag_1ms) {
-	    flag_1ms = 0;
-	    // 1ms tasks here
-	  }
+      if (flag_1ms) {
+          flag_1ms = 0;
+          start = SysTick->VAL;
 
-	  if (flag_10ms) {
-	    flag_10ms = 0;
-	    Analog_Read_ALL();
-	    ConvertAllAdcToMillivolts();
-	    ConvertMilliVoltsToDistance();
-	    ConvertMilliVoltsToTemperature();
-	  }
+          // 1ms tasks here
 
-	  if (flag_100ms) {
-	    flag_100ms = 0;
+          end = SysTick->VAL;
+          exec_time_1ms = SYSTICK_DIFF(start, end);
+      }
 
-	  }
+      if (flag_10ms) {
+          flag_10ms = 0;
+          start = SysTick->VAL;
 
-	  if (flag_1000ms) {
-	    flag_1000ms = 0;
-	    SendAllToCan();
-	  }
+          Analog_Read_ALL();
+          ConvertAllAdcToMillivolts();
+          ConvertMilliVoltsToDistance();
+          ConvertMilliVoltsToTemperature();
 
+          end = SysTick->VAL;
+          exec_time_10ms = SYSTICK_DIFF(start, end);
+      }
+
+      if (flag_100ms) {
+          flag_100ms = 0;
+          start = SysTick->VAL;
+
+          SendMainDataToCan();
+
+          end = SysTick->VAL;
+          exec_time_100ms = SYSTICK_DIFF(start, end);
+      }
+
+      if (flag_1000ms) {
+          flag_1000ms = 0;
+          start = SysTick->VAL;
+
+          // your 1s tasks
+
+          end = SysTick->VAL;
+          exec_time_1000ms = SYSTICK_DIFF(start, end);
+      }
   }
+
 
     /* USER CODE END WHILE */
 
@@ -369,12 +414,12 @@ static void MX_TIM1_Init(void)
 
   /* USER CODE END TIM1_Init 1 */
   htim1.Instance = TIM1;
-  htim1.Init.Prescaler = 71;
+  htim1.Init.Prescaler = 7199;
   htim1.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim1.Init.Period = 999;
+  htim1.Init.Period = 9;
   htim1.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim1.Init.RepetitionCounter = 0;
-  htim1.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
+  htim1.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
   if (HAL_TIM_Base_Init(&htim1) != HAL_OK)
   {
     Error_Handler();
@@ -446,35 +491,30 @@ void ADS1119_Start(I2C_HandleTypeDef *hi2c){
     // 3. Start conversion
     uint8_t start_cmd = ADS1119_CMD_START;
     HAL_I2C_Master_Transmit(hi2c, ADS1119_ADDR, &start_cmd, 1, HAL_MAX_DELAY);
-
-    // 4. Wait for conversion (20SPS → 50 ms cycle, wait a bit more)
-    HAL_Delay(60);
 }
 
+void ADS1119_Config(I2C_HandleTypeDef *hi2c, int port_number){
 
-int16_t ADS1119_Read(I2C_HandleTypeDef *hi2c, int port_number) {
+	   // 2. Configure for AIN0-AIN1, gain = 1, 20SPS, continuous, internal ref
+	    uint8_t config_data[2] ;
+	    config_data[0] = ADS1119_REG_CONFIG;
+
+	    if (port_number==0)
+	    	config_data[1] = CONFIG_AIN0;
+	    if (port_number==1)
+			config_data[1] = CONFIG_AIN1;
+	    if (port_number==2)
+			config_data[1] = CONFIG_AIN2;
+	    if (port_number==3)
+			config_data[1] = CONFIG_AIN3;
+
+	    HAL_I2C_Master_Transmit(hi2c, ADS1119_ADDR, config_data, 2, HAL_MAX_DELAY);
+
+}
+
+int16_t ADS1119_Read(I2C_HandleTypeDef *hi2c) {
     HAL_StatusTypeDef ret;
     uint8_t data[2];
-
-    // 2. Configure for AIN0-AIN1, gain = 1, 20SPS, continuous, internal ref
-    uint8_t config_data[2] ;
-    config_data[0] = ADS1119_REG_CONFIG;
-
-    if (port_number==0)
-    	config_data[1] = CONFIG_AIN0;
-    if (port_number==1)
-		config_data[1] = CONFIG_AIN1;
-    if (port_number==2)
-		config_data[1] = CONFIG_AIN2;
-    if (port_number==3)
-		config_data[1] = CONFIG_AIN3;
-
-    ret = HAL_I2C_Master_Transmit(hi2c, ADS1119_ADDR, config_data, 2, HAL_MAX_DELAY);
-    if (ret != HAL_OK) return -10001;
-
-
-    ADS1119_Start(hi2c);
-
 
     // 5. Read conversion result
     uint8_t read_cmd = ADS1119_CMD_READ;
@@ -490,56 +530,91 @@ int16_t ADS1119_Read(I2C_HandleTypeDef *hi2c, int port_number) {
 
 void Analog_Read_ALL(void){
 
-    //MUX1
-    HAL_GPIO_WritePin(GPIOB, MUX1_A1_B, 0);
-    HAL_GPIO_WritePin(GPIOB, MUX1_A0_B, 0);
-	//MUX2
-    HAL_GPIO_WritePin(GPIOB, MUX2_A1_B, 0);
-    HAL_GPIO_WritePin(GPIOB, MUX2_A0_B, 0);
 
-    adc_analog_in_raw[0] = ADS1119_Read(&hi2c1,0); 	//ADC1
-    pt_analog_in_raw[1] = ADS1119_Read(&hi2c1,1);	//PT2
-    pt_analog_in_raw[2] = ADS1119_Read(&hi2c1,2);	//PT3
-    ADS1119_Read(&hi2c1,3); 						// Not connected
+	ADS1119_Config(&hi2c1,0);
+	ADS1119_Start(&hi2c1);
 
+	SetMUX(0b00000000);
+    adc_analog_in_raw[0] = ADS1119_Read(&hi2c1); 	//ADC1
 
-    //MUX1
-    HAL_GPIO_WritePin(GPIOB, MUX1_A1_B, 0);
-    HAL_GPIO_WritePin(GPIOB, MUX1_A0_B, 1);
-	//MUX2
-    HAL_GPIO_WritePin(GPIOB, MUX2_A1_B, 0);
-    HAL_GPIO_WritePin(GPIOB, MUX2_A0_B, 1);
+    SetMUX(0b00000101);
+    // NC
 
-    ADS1119_Read(&hi2c1,0); 						//Not Connected
-    pt_analog_in_raw[7] = ADS1119_Read(&hi2c1,1);	//PT8
-    pt_analog_in_raw[4] = ADS1119_Read(&hi2c1,2);	//PT5
-    height_right_analog_in_raw = ADS1119_Read(&hi2c1,3);//Height Right
+    SetMUX(0b00001010);
+    pt_analog_in_raw[0] = ADS1119_Read(&hi2c1); 	//PT1
+
+    SetMUX(0b00001111);
+    adc_analog_in_raw[1] = ADS1119_Read(&hi2c1); 	//ADC2
 
 
-    //MUX1
-    HAL_GPIO_WritePin(GPIOB, MUX1_A1_B, 1);
-    HAL_GPIO_WritePin(GPIOB, MUX1_A0_B, 0);
-	//MUX2
-    HAL_GPIO_WritePin(GPIOB, MUX2_A1_B, 1);
-    HAL_GPIO_WritePin(GPIOB, MUX2_A0_B, 0);
 
-    pt_analog_in_raw[0] = ADS1119_Read(&hi2c1,0); 	//PT1
-    pt_analog_in_raw[3] = ADS1119_Read(&hi2c1,1);	//PT4
-    pt_analog_in_raw[6] = ADS1119_Read(&hi2c1,2);	//PT7
-    ADS1119_Read(&hi2c1,3);							// Not connected
+	ADS1119_Config(&hi2c1,1);
+	ADS1119_Start(&hi2c1);
 
+	SetMUX(0b00000000);
+	pt_analog_in_raw[1] = ADS1119_Read(&hi2c1);	//PT2
 
-    //MUX1
-    HAL_GPIO_WritePin(GPIOB, MUX1_A1_B, 1);
-    HAL_GPIO_WritePin(GPIOB, MUX1_A0_B, 1);
-	//MUX2
-    HAL_GPIO_WritePin(GPIOB, MUX2_A1_B, 1);
-    HAL_GPIO_WritePin(GPIOB, MUX2_A0_B, 1);
+    SetMUX(0b00000101);
+    pt_analog_in_raw[7] = ADS1119_Read(&hi2c1);	//PT8
 
-    adc_analog_in_raw[1] = ADS1119_Read(&hi2c1,0); 	//ADC2
+    SetMUX(0b00001010);
+    pt_analog_in_raw[3] = ADS1119_Read(&hi2c1);	//PT4
+
+    SetMUX(0b00001111);
     pt_analog_in_raw[5] = 0;//ADS1119_Read(&hi2c1,1);	//PT6 PCB ERROR NOT CONNECTED
-    height_left_analog_in_raw = ADS1119_Read(&hi2c1,2);//Height Left
-    ADS1119_Read(&hi2c1,3);							// Not connected
+
+
+
+	ADS1119_Config(&hi2c1,2);
+	ADS1119_Start(&hi2c1);
+
+	SetMUX(0b00000000);
+	pt_analog_in_raw[2] = ADS1119_Read(&hi2c1);	//PT3
+
+    SetMUX(0b00000101);
+    pt_analog_in_raw[4] = ADS1119_Read(&hi2c1);	//PT5
+
+    SetMUX(0b00001010);
+    pt_analog_in_raw[6] = ADS1119_Read(&hi2c1);	//PT7
+
+    SetMUX(0b00001111);
+    height_left_analog_in_raw = ADS1119_Read(&hi2c1);//Height Left
+
+
+	ADS1119_Config(&hi2c1,3);
+	ADS1119_Start(&hi2c1);
+
+	SetMUX(0b00000000);
+	// NC
+
+    SetMUX(0b00000101);
+    height_right_analog_in_raw = ADS1119_Read(&hi2c1);//Height Right
+
+    SetMUX(0b00001010);
+    // NC
+
+    SetMUX(0b00001111);
+    // NC
+
+}
+
+void SetMUX(uint8_t mux_value) {
+    // Extract each bit from the mux_value
+    uint8_t mux1_a0 = (mux_value >> 0) & 0x01;
+    uint8_t mux1_a1 = (mux_value >> 1) & 0x01;
+    uint8_t mux2_a0 = (mux_value >> 2) & 0x01;
+    uint8_t mux2_a1 = (mux_value >> 3) & 0x01;
+
+    // Set the GPIOs accordingly
+    HAL_GPIO_WritePin(GPIOB, MUX1_A0_B, mux1_a0 ? GPIO_PIN_SET : GPIO_PIN_RESET);
+    HAL_GPIO_WritePin(GPIOB, MUX1_A1_B, mux1_a1 ? GPIO_PIN_SET : GPIO_PIN_RESET);
+    HAL_GPIO_WritePin(GPIOB, MUX2_A0_B, mux2_a0 ? GPIO_PIN_SET : GPIO_PIN_RESET);
+    HAL_GPIO_WritePin(GPIOB, MUX2_A1_B, mux2_a1 ? GPIO_PIN_SET : GPIO_PIN_RESET);
+
+    for(int i = 0; i<6000; i++){ // 6000 safe minimum delay
+    	//empty loop to allow time for MUX to set
+    	__NOP();
+    }
 
 }
 
@@ -606,21 +681,65 @@ float LookupWithInterpolation(const LookupTable_t *table, int32_t input) {
     return table->output_values[i] + slope * (input - table->input_values[i]);
 }
 
-void SendAllToCan(void){
+void SendMainDataToCan(void){
 
-	  // Initialize the header fields
-	  TxHeader.StdId = CAN_ID_RDHT_ADC;          // Standard ID
-	  TxHeader.ExtId = 0x00;           // Not using extended ID
-	  TxHeader.RTR = CAN_RTR_DATA;     // Data frame (not remote)
-	  TxHeader.IDE = CAN_ID_STD;       // Standard ID
-	  TxHeader.DLC = 8;                // Send 8 bytes
-	  TxHeader.TransmitGlobalTime = DISABLE;
+    // Initialize the header fields
+	can_main_data_TxHeader.StdId = CAN_ID_RDHT_ADC;          // Standard ID
+	can_main_data_TxHeader.ExtId = 0x00;           // Not using extended ID
+	can_main_data_TxHeader.RTR = CAN_RTR_DATA;     // Data frame (not remote)
+	can_main_data_TxHeader.IDE = CAN_ID_STD;       // Standard ID
+	can_main_data_TxHeader.DLC = 8;                // Send 8 bytes
+	can_main_data_TxHeader.TransmitGlobalTime = DISABLE;
 
 
-      if(HAL_CAN_AddTxMessage(&hcan, &TxHeader, TxData, &TxMailbox)!= HAL_OK)
-      {
-       Error_Handler();
-      }
+	can_main_data[0] = (uint8_t) (((uint16_t) (distance_right_mm * 10)) >> 8); //lohigh
+	can_main_data[1] = (uint8_t) (distance_right_mm * 10);
+
+	//i primi due byte sono heightSensor2
+	can_main_data[2] = (uint8_t) (((uint16_t) (distance_left_mm * 10)) >> 8); //loHigh
+	can_main_data[3] = (uint8_t) (distance_left_mm * 10);
+
+	//
+	can_main_data[4] = (uint8_t) (((uint16_t) adc_analog_in_mv[0]) >> 8); //loHigh
+	can_main_data[5] = (uint8_t) (adc_analog_in_mv[0]);
+
+
+	can_main_data[6] = (uint8_t) (((uint16_t) adc_analog_in_mv[1]) >> 8); //loHigh
+	can_main_data[7] = (uint8_t) adc_analog_in_mv[1];
+
+
+	if(HAL_CAN_AddTxMessage(&hcan, &can_main_data_TxHeader, can_main_data, &can_TxMailbox)!= HAL_OK)
+	{
+	Error_Handler();
+	}
+}
+
+
+// Timer interrupt callback
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
+{
+    if (htim == &htim1)  // Check if the interrupt came from TIM1
+    {
+        flag_1ms = 1;  // Set 1ms flag
+
+        ms_counter++;
+
+        // Every 10ms (when counter is multiple of 10)
+        if (ms_counter % 10 == 0) {
+            flag_10ms = 1;
+        }
+
+        // Every 100ms (when counter is multiple of 100)
+        if (ms_counter % 100 == 0) {
+            flag_100ms = 1;
+        }
+
+        // Every 1000ms (when counter is multiple of 1000)
+        if (ms_counter % 1000 == 0) {
+            flag_1000ms = 1;
+            ms_counter = 0;  // Reset counter to avoid overflow
+        }
+    }
 }
 
 
