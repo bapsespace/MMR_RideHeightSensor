@@ -1,10 +1,12 @@
 # MMR_RideHeightSensor
+- [ ] **SALADARE seconda scheda**
+- [ ] **CONTROLLARE SCHEMATICO CIRCUITO ride height sensor, (NON può funzionare ?)**
 - [ ] **CALIBRARE SENSORI ALTEZZA E TEMPERATURE, nelle look up table**
 ## Note sul PCB
+- [ ] Testare Laser sensor (check voltage divider / current mesuring circuit )
 - [x] PT6 NON COLLEGATO, errore design PCB, (_non è indispinsabile basta ricordarsi di non usarlo_)
 - [x] Da risaldare OPAMP e i 2 FUsibili per laser distance sensors
-- [ ] Testare Laser sensor (check voltage divider / current mesuring circuit )
-- [ ] In fase di TEST ricordarsi di attaccare resistenza 120Ohm sul CANBUS
+- [x] In fase di TEST ricordarsi di attaccare resistenza 120Ohm sul CANBUS
 
 ## Note sul Codice
 - [x] CAN, test message funziona, implementare invio dati ADC
