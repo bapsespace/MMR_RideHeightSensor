@@ -35,7 +35,10 @@
 #define MUX2_A0_B GPIO_PIN_11
 #define MUX2_A1_B GPIO_PIN_10
 
-#define CAN_ID_RDHT_ADC 0x315 // ID messaggio ride height (2byte l'uno): left + rigt + adc1 + adc2
+
+
+#define CAN_ID_MAIN_DATA 0x315 // ID messaggio ride height (2byte l'uno): left + rigt + adc1 + adc2
+
 
 /* USER CODE END PD */
 
@@ -115,12 +118,21 @@ typedef struct {
 
 
 
-// Table for height sensor
-static const int32_t height_input_mv[] = {0, 1000, 2000, 3000};
-static const float height_output_mm[] = {0.0f, 10.0f, 20.0f, 120.0f};
-LookupTable_t height_table = {
-    .input_values = height_input_mv,
-    .output_values = height_output_mm,
+// Table for height sensor RIGHT
+static const int32_t height_right_input_mv[] = {7, 660, 1260, 2047};
+static const float height_right_output_mm[] = {16.0f, 28.0f, 39.0f, 51.0f};
+LookupTable_t height_right_table = {
+    .input_values = height_right_input_mv,
+    .output_values = height_right_output_mm,
+    .size = 4
+};
+
+// Table for height sensor LEFT
+static const int32_t height_left_input_mv[] = {7, 660, 1260, 2047};
+static const float height_left_output_mm[] = {16.0f, 28.0f, 39.0f, 51.0f};
+LookupTable_t height_left_table = {
+    .input_values = height_left_input_mv,
+    .output_values = height_left_output_mm,
     .size = 4
 };
 
@@ -133,6 +145,7 @@ LookupTable_t temp_table = {
     .output_values = temp_output_c,
     .size = 4
 };
+
 
 /* USER CODE END PV */
 
@@ -240,10 +253,12 @@ int main(void)
           flag_10ms = 0;
           start = SysTick->VAL;
 
+          // 10ms tasks
           Analog_Read_ALL();
           ConvertAllAdcToMillivolts();
           ConvertMilliVoltsToDistance();
           ConvertMilliVoltsToTemperature();
+          SendMainDataToCan();
 
           end = SysTick->VAL;
           exec_time_10ms = SYSTICK_DIFF(start, end);
@@ -253,7 +268,7 @@ int main(void)
           flag_100ms = 0;
           start = SysTick->VAL;
 
-          SendMainDataToCan();
+          // 100ms tasks
 
           end = SysTick->VAL;
           exec_time_100ms = SYSTICK_DIFF(start, end);
@@ -263,7 +278,7 @@ int main(void)
           flag_1000ms = 0;
           start = SysTick->VAL;
 
-          // your 1s tasks
+          // 1 second tasks
 
           end = SysTick->VAL;
           exec_time_1000ms = SYSTICK_DIFF(start, end);
@@ -611,7 +626,7 @@ void SetMUX(uint8_t mux_value) {
     HAL_GPIO_WritePin(GPIOB, MUX2_A0_B, mux2_a0 ? GPIO_PIN_SET : GPIO_PIN_RESET);
     HAL_GPIO_WritePin(GPIOB, MUX2_A1_B, mux2_a1 ? GPIO_PIN_SET : GPIO_PIN_RESET);
 
-    for(int i = 0; i<6000; i++){ // 6000 safe minimum delay
+    for(int i = 0; i<10000; i++){ // at least 8000
     	//empty loop to allow time for MUX to set
     	__NOP();
     }
@@ -644,8 +659,8 @@ int32_t ADS1119_ConvertToMillivolts(int16_t raw_value) {
 }
 
 void ConvertMilliVoltsToDistance(void) {
-    distance_right_mm = LookupWithInterpolation(&height_table, height_right_analog_in_mv);
-    distance_left_mm = LookupWithInterpolation(&height_table, height_left_analog_in_mv);
+    distance_right_mm = LookupWithInterpolation(&height_right_table, height_right_analog_in_mv);
+    distance_left_mm = LookupWithInterpolation(&height_left_table, height_left_analog_in_mv);
 }
 
 void ConvertMilliVoltsToTemperature(void){
@@ -684,7 +699,7 @@ float LookupWithInterpolation(const LookupTable_t *table, int32_t input) {
 void SendMainDataToCan(void){
 
     // Initialize the header fields
-	can_main_data_TxHeader.StdId = CAN_ID_RDHT_ADC;          // Standard ID
+	can_main_data_TxHeader.StdId = CAN_ID_MAIN_DATA;          // Standard ID
 	can_main_data_TxHeader.ExtId = 0x00;           // Not using extended ID
 	can_main_data_TxHeader.RTR = CAN_RTR_DATA;     // Data frame (not remote)
 	can_main_data_TxHeader.IDE = CAN_ID_STD;       // Standard ID
