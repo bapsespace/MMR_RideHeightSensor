@@ -9,6 +9,7 @@
 - [x] In fase di TEST ricordarsi di attaccare resistenza 120Ohm sul CANBUS
 
 ## Note sul Codice
+- [ ] Forse si può ottimizzare ancora il codice Analog_Read_ALL(), Settare prima il mux e poi adc sweep, ma è da verificare se effettivamente è più voloce o no 
 - [x] CAN, test message funziona, implementare invio dati ADC
 - [x] aggiungere funzione conversione, adc_raw -> adce_voltage  (-32k : +32K [signed int 16bit]  -> -2.048V : +2.048V [float])
 - [x] Ride Height, Aggiungere funzione calibrazione specifica **solo** per Sensori Laser Distanza
