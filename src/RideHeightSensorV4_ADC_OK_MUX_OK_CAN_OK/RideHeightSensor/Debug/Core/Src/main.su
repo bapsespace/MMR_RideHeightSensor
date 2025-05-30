@@ -12,9 +12,9 @@
 ../Core/Src/main.c:616:6:SetMUX	24	static,ignoring_inline_asm
 ../Core/Src/main.c:636:6:ConvertAllAdcToMillivolts	16	static
 ../Core/Src/main.c:653:9:ADS1119_ConvertToMillivolts	16	static
-../Core/Src/main.c:661:6:ConvertMilliVoltsToDistance	8	static
-../Core/Src/main.c:666:6:ConvertMilliVoltsToTemperature	16	static
-../Core/Src/main.c:673:7:LookupWithInterpolation	32	static
-../Core/Src/main.c:699:6:SendMainDataToCan	8	static
-../Core/Src/main.c:734:6:HAL_TIM_PeriodElapsedCallback	16	static
-../Core/Src/main.c:768:6:Error_Handler	4	static
+../Core/Src/main.c:659:6:ConvertMilliVoltsToDistance	8	static
+../Core/Src/main.c:664:6:ConvertMilliVoltsToTemperature	16	static
+../Core/Src/main.c:671:7:LookupWithInterpolation	32	static
+../Core/Src/main.c:697:6:SendMainDataToCan	8	static
+../Core/Src/main.c:732:6:HAL_TIM_PeriodElapsedCallback	16	static
+../Core/Src/main.c:766:6:Error_Handler	4	static

@@ -23,10 +23,10 @@
 #define ADS1119_CMD_RESET    0x06
 
 //Testato funziona NON MODIFICARE
-#define CONFIG_AIN0   0b01101110 // AIN0 - AGND
-#define CONFIG_AIN1   0b10001110 //	AIN1 - AGND
-#define CONFIG_AIN2   0b10101110 //	AIN2 - AGND
-#define CONFIG_AIN3   0b11001110 // AIN3 - AGND
+#define CONFIG_AIN0   0b01101111 // AIN0 - AGND
+#define CONFIG_AIN1   0b10001111 //	AIN1 - AGND
+#define CONFIG_AIN2   0b10101111 //	AIN2 - AGND
+#define CONFIG_AIN3   0b11001111 // AIN3 - AGND
 
 
 #define MUX1_A0_B GPIO_PIN_5
@@ -119,8 +119,10 @@ typedef struct {
 
 
 // Table for height sensor RIGHT
-static const int32_t height_right_input_mv[] = {7, 660, 1260, 2047};
-static const float height_right_output_mm[] = {16.0f, 28.0f, 39.0f, 51.0f};
+// Current Sensor Baseline {870, 2051, 3210, 4335};
+// Voltage Sensor Baseline PROBLEMA voltage creep
+static const int32_t height_right_input_mv[] = {870, 2051, 3210, 4335};
+static const float height_right_output_mm[] = {16.0f, 51.0f, 86.0f, 120.0f};
 LookupTable_t height_right_table = {
     .input_values = height_right_input_mv,
     .output_values = height_right_output_mm,
@@ -128,8 +130,10 @@ LookupTable_t height_right_table = {
 };
 
 // Table for height sensor LEFT
-static const int32_t height_left_input_mv[] = {7, 660, 1260, 2047};
-static const float height_left_output_mm[] = {16.0f, 28.0f, 39.0f, 51.0f};
+// Current Sensor Baseline {866, 2045, 3200, 4328};
+// Voltage Sensor Baseline PROBLEMA voltage creep
+static const int32_t height_left_input_mv[] = {866, 2045, 3200, 4328};
+static const float height_left_output_mm[] = {16.0f, 51.0f, 86.0f, 120.0f};
 LookupTable_t height_left_table = {
     .input_values = height_left_input_mv,
     .output_values = height_left_output_mm,
@@ -636,26 +640,24 @@ void SetMUX(uint8_t mux_value) {
 void ConvertAllAdcToMillivolts(void) {
     // Convert PT analog inputs (8 channels)
     for(int i = 0; i < 8; i++) {
-        pt_analog_in_mv[i] = pt_analog_in_raw[i] / 16;
+        pt_analog_in_mv[i] = ADS1119_ConvertToMillivolts(pt_analog_in_raw[i]);
     }
 
     // Convert ADC analog inputs (2 channels)
     for(int i = 0; i < 2; i++) {
-        adc_analog_in_mv[i] = adc_analog_in_raw[i] / 16;
+        adc_analog_in_mv[i] = ADS1119_ConvertToMillivolts(adc_analog_in_raw[i]);
     }
 
     // Convert height sensors
-    height_right_analog_in_mv = height_right_analog_in_raw / 16;
-    height_left_analog_in_mv = height_left_analog_in_raw / 16;
+    height_right_analog_in_mv = ADS1119_ConvertToMillivolts(height_right_analog_in_raw);
+    height_left_analog_in_mv = ADS1119_ConvertToMillivolts(height_left_analog_in_raw);
 }
 
 
 int32_t ADS1119_ConvertToMillivolts(int16_t raw_value) {
-    // 2.048V = 2048mV, 32768 = 2^15
-    // Calculation: (raw_value * 2048) / 32768
-    // Which simplifies to: raw_value / 16
-    return (int32_t)raw_value / 16;
-    // Or even simpler: return raw_value / 16;
+
+    return (int32_t)(raw_value * 5000) / 32768;
+
 }
 
 void ConvertMilliVoltsToDistance(void) {
