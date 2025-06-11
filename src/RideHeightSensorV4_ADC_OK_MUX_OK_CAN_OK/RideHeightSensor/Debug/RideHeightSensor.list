@@ -2128,7 +2128,7 @@ void SendMainDataToCan(void){
     // Initialize the header fields
 	can_main_data_TxHeader.StdId = CAN_ID_MAIN_DATA;          // Standard ID
  8001054:	4b3b      	ldr	r3, [pc, #236]	@ (8001144 <SendMainDataToCan+0xf4>)
- 8001056:	f240 3215 	movw	r2, #789	@ 0x315
+ 8001056:	f44f 7246 	mov.w	r2, #792	@ 0x318
  800105a:	601a      	str	r2, [r3, #0]
 	can_main_data_TxHeader.ExtId = 0x00;           // Not using extended ID
  800105c:	4b39      	ldr	r3, [pc, #228]	@ (8001144 <SendMainDataToCan+0xf4>)

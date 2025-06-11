@@ -37,7 +37,7 @@
 
 
 
-#define CAN_ID_MAIN_DATA 0x315 // ID messaggio ride height (2byte l'uno): left + rigt + adc1 + adc2
+#define CAN_ID_MAIN_DATA 0x318 // ID messaggio ride height (2byte l'uno): left + rigt + adc1 + adc2
 
 
 /* USER CODE END PD */
