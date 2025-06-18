@@ -353,7 +353,7 @@ static void MX_CAN_Init(void)
   /* USER CODE END CAN_Init 1 */
   hcan.Instance = CAN1;
   hcan.Init.Prescaler = 3;
-  hcan.Init.Mode = CAN_MODE_LOOPBACK;
+  hcan.Init.Mode = CAN_MODE_NORMAL;
   hcan.Init.SyncJumpWidth = CAN_SJW_1TQ;
   hcan.Init.TimeSeg1 = CAN_BS1_10TQ;
   hcan.Init.TimeSeg2 = CAN_BS2_1TQ;
@@ -708,7 +708,6 @@ void SendMainDataToCan(void){
 	can_main_data_TxHeader.DLC = 8;                // Send 8 bytes
 	can_main_data_TxHeader.TransmitGlobalTime = DISABLE;
 
-
 	can_main_data[0] = (uint8_t) (((uint16_t) (distance_right_mm * 10)) >> 8); //lohigh
 	can_main_data[1] = (uint8_t) (distance_right_mm * 10);
 
@@ -770,6 +769,8 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 void Error_Handler(void)
 {
   /* USER CODE BEGIN Error_Handler_Debug */
+	HAL_Delay(1000);
+	NVIC_SystemReset();
   /* USER CODE END Error_Handler_Debug */
 }
 

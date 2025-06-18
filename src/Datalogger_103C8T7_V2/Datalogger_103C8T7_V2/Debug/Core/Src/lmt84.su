@@ -1,2 +1,0 @@
-../Core/Src/lmt84.c:10:7:LMT84_getTemperature	368	static
-../Core/Src/lmt84.c:51:9:LMT84_isVoltageValid	16	static

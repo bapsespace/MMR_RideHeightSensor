@@ -1,3 +1,0 @@
-../Core/Src/stm32_adc_utils.c:10:7:getInternalTemperatureF103	16	static
-../Core/Src/stm32_adc_utils.c:14:7:getMaxVoltageF103	16	static
-../Core/Src/stm32_adc_utils.c:18:9:calibrateADC	24	static
